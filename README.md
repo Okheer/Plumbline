@@ -1,31 +1,39 @@
-# Verifiable-Process-Reward Fund
+# Plumbline
 
-Working descriptive title; the user has not selected a final brand name.
+Verifiable-Process-Reward Fund. The original idea and ten-phase plan are preserved in research/original-idea.md and docs/vpr-fund-10-phase-plan.md.
 
-A self-improving multi-strategy trading fund in which agents commit to structured trade intents, execution enforces authority and limits, and on-chain activity produces independently recomputable process rewards. A hybrid off-chain judge, capital allocator, and drift monitor close the improvement and lifecycle loop.
-
-## Start here
-- `AGENTS.md`: instructions for working on this project.
-- `STATUS.md`: current progress, blockers, and next step.
-- `docs/IDEA.md`: faithful concept summary and boundaries.
-- `docs/MVP.md`: all ten phases and their acceptance checklist.
-- `docs/vpr-fund-10-phase-plan.md`: exact user-supplied implementation plan.
-- `docs/DECISIONS.md`: source differences, fixed constraints, and open choices.
-- `docs/REFERENCES.md`: source provenance and external verification queue.
-- `research/original-idea.md`: exact original pasted proposal, including its conversational context.
-
-## Planned implementation
-All layers run on Sepolia. The Graph/Substreams computes the reward oracle and supplies live data; 1inch Aqua and a custom SwapVM provide execution; ENSv2 provides hierarchical identity and trade authority. Per-agent backend signers/KMS supply the custody component under the phase plan. Supporting services provide LLM policies and judging, allocation, storage, and a React/Next.js dashboard.
-
-The complete ten-phase plan is the build scope. Begin with Phase 1's Sepolia Substreams provider gate, then follow the phases in order. No contracts, services, toolchains, deployments, or application tests have been created by this documentation task. Setup and run commands will be added when implemented.
-
-## Phase 1 setup in progress
-Working directory: `/home/mihir/Plumbline`. See STATUS.md and docs/ISSUES.md for blockers and evidence.
-
-After creating a Graph Market API key, save its JWT privately from your own terminal:
+## Run the Phase 1 foundation
 
 ```bash
-python3 /home/mihir/Plumbline/scripts/configure-substreams-token.py
+cd /home/mihir/Plumbline
+nvm use
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
 ```
 
-The prompt hides input. Local credentials and downloaded tools are excluded from Git. Never put keys in documentation or screenshots. No authenticated provider test has passed yet.
+Open http://127.0.0.1:3000 . Backend: http://127.0.0.1:3001 . The frontend is intentionally a blank scaffold for Phase 1. The backend /network endpoint reads live Sepolia balance and block data. POST /intents/validate validates the shared trade-intent format without trading. No agent policies, risk enforcement, or reward oracle are implemented yet; those remain in their specified phases.
+
+The backend reads the Alchemy URL from ignored .secrets/sepolia-rpc-url or SEPOLIA_RPC_URL. Never commit credentials. Save the Graph JWT interactively using `python3 scripts/configure-substreams-token.py`.
+
+## Verify
+
+```bash
+corepack pnpm check
+corepack pnpm proto:check
+corepack pnpm build
+forge build --root packages/contracts
+cargo check --locked --manifest-path packages/oracle/Cargo.toml --target wasm32-unknown-unknown
+python3 scripts/check-provider.py
+```
+
+Provider test requires network access and saved credentials; CI deliberately runs credential-free checks. Its first run may download the pinned ethereum-common package. Substreams CLI is currently installed at .tools/bin/substreams; release/checksum evidence is in docs/phase-1/substreams-install.txt. Node 22.23.2 and pnpm 10.17.1 are pinned. Rust dependencies are locked by packages/oracle/Cargo.lock.
+
+## Packages
+
+- packages/shared: validated intent/fill/mandate JSON types and boundary tests.
+- packages/backend: running HTTP service and real Sepolia reads.
+- packages/frontend: Next.js scaffolding only; complete dashboard remains Phase 10.
+- packages/contracts: Solidity 0.8.30 event interface and pinned ENSv2 deployment ABIs.
+- packages/oracle: Rust/WASM foundation and protobuf schemas; predicates remain Phase 6.
+
+See docs/phase-1/INTERFACE.md for interface semantics and acceptance, STATUS.md for phase progress, and docs/ISSUES.md for observed errors and fixes. The phase plan is unchanged. Git commits remain manual.

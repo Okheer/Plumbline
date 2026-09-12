@@ -1,6 +1,1 @@
-export const dynamic='force-dynamic';
-export default async function Page(){
- let network:{chainId:number;blockNumber:string;wallet:string;balanceWei:string}|null=null;
- try{const response=await fetch('http://127.0.0.1:3001/network',{cache:'no-store',signal:AbortSignal.timeout(12000)});if(response.ok)network=await response.json();}catch{}
- return <main><header>PLUMBLINE <span>SEPOLIA · DEVELOPMENT</span></header><p className="label">PHASE 01 / FOUNDATIONS</p><h1>Every allocation<br/>has a record.</h1><p className="intro">The foundation for verifiable trading strategies. Network connectivity is live; trading and capital allocation arrive in the later build phases.</p><section><article><small>Network</small><strong>{network?'Ethereum Sepolia':'Connection unavailable'}</strong><p>{network?`Chain ${network.chainId}`:'Start the backend and configure its RPC.'}</p></article><article><small>Latest observed block</small><strong>{network?.blockNumber??'—'}</strong><p>Read directly through the backend</p></article><article><small>Wallet balance</small><strong>{network?`${(Number(BigInt(network.balanceWei)/1000000000000n)/1000000).toFixed(6)} ETH`:'—'}</strong><p>Sepolia test ETH</p></article></section><footer><p>Existing wallet</p><code>{network?.wallet??'Not available'}</code><p>Trading disabled · No simulated profits or agents shown</p></footer></main>;
-}
+export default function Page() { return null; }
