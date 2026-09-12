@@ -19,7 +19,8 @@
     "identity:register": "tsx scripts/identity-metamask.ts",
     "identity:verify": "tsx scripts/verify-identity.ts",
     "identity:mint": "tsx scripts/identity-metamask.ts",
-    "identity:receipt-test": "tsx scripts/test-receipt-match.ts"
+    "identity:receipt-test": "tsx scripts/test-receipt-match.ts",
+    "authority:test": "python3 scripts/test-identity-fork.py --authority"
   },
   "devDependencies": {
     "typescript": "5.9.3",

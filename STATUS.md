@@ -21,3 +21,10 @@ Updated: 2026-09-13. Working copy: /home/mihir/Plumbline.
 CI workflow is configured and its local checks pass; a remote GitHub Actions run has not been verified. No trades, fund allocation, model training, or reward predicates implemented. Further agent wallets can be assigned as the population is defined; no final population count inferred from the two supplied addresses.
 
 Issue history: docs/ISSUES.md. Original idea and phase plan unchanged. Commits remain manual.
+
+## Phase 3 — implementation in progress
+- Fund wallet selected as initial allocator/admin. Demo defaults: 50 bps slippage, 100 quote tokens (E18), 300-second oracle age. Actual instrument whitelist remains Phase 4; no live mandate or active role set.
+- Implemented ENSAuthorityAdapter, lifecycle grant/revoke builders, scoped identity/mandate permissions and mandate record encoding.
+- Six adapter unit tests pass with registry fixtures. Separate pinned Sepolia fork test passes actual ENS role grant/revoke, allocator-only mandate editing, retained agent identity edits, and rejected allocator identity edits. Evidence: docs/phase-3/fork-test.txt.
+- Live migration required: existing strategy registry lacks AGENT_ACTIVE admin, and existing resolver grants broad text permissions. Replace the strategy registry while preserving names/resolver and migrate records to scoped permissions. Agent token ID/registry address will change; source namehash remains the same.
+- Remaining: promotion semantics and tests; adapter integration against real ENS transfer/expiry behavior; reviewable migration/deployment signing flow; live adapter and grant/revoke evidence. Phase 3 is not complete.

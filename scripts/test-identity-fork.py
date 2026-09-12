@@ -1,5 +1,6 @@
 """Run ENSv2 integration checks on a disposable local Sepolia fork."""
 import json
+import sys
 import os
 from pathlib import Path
 import socket
@@ -25,10 +26,10 @@ try:
         time.sleep(0.1)
     else:
         raise RuntimeError('Local fork did not become ready')
-    result = subprocess.run(['pnpm', 'exec', 'tsx', 'scripts/test-identity-fork.ts'], cwd=root, capture_output=True, text=True, timeout=120)
+    result = subprocess.run(['pnpm', 'exec', 'tsx', 'scripts/test-authority-fork.ts' if '--authority' in sys.argv else 'scripts/test-identity-fork.ts'], cwd=root, capture_output=True, text=True, timeout=120)
     output = (result.stdout + result.stderr).replace(rpc, '[REDACTED_RPC]')
     print(output, end='')
-    evidence = root / 'docs/phase-2/fork-test.txt'
+    evidence = root / ('docs/phase-3/fork-test.txt' if '--authority' in sys.argv else 'docs/phase-2/fork-test.txt')
     evidence.parent.mkdir(parents=True, exist_ok=True)
     evidence.write_text(output)
     raise SystemExit(result.returncode)
