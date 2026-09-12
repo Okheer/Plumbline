@@ -10,7 +10,7 @@ import { namehash, labelhash, packetToBytes } from 'viem/ens';
 import { deployment, deployRegistry, deployAgentResolver, registerChild, parentLink, zeroAddress, type Transaction } from '../packages/backend/src/identity/transactions.ts';
 import { commitmentArgs, commitRegistration, revealRegistration } from '../packages/backend/src/identity/registration.ts';
 const owner='0x89cE79730f8a1F4B05B4EF9334ef4f53E237dE20' as Address;
-const {values}=parseArgs({options:{'mint-agent':{type:'string'},'agent-owner':{type:'string'},'prepare-only':{type:'boolean'}}});
+const {values}=parseArgs({options:{'mint-agent':{type:'string'},'agent-owner':{type:'string'},'prepare-only':{type:'boolean'},migration:{type:'boolean'},authority:{type:'boolean'}}});
 const mintLabel=values['mint-agent'];
 if(mintLabel&&!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(mintLabel))throw new Error('Use a lowercase ASCII agent label');
 if(mintLabel&&!values['agent-owner'])throw new Error('Provide --agent-owner public address');
@@ -18,12 +18,13 @@ const agent=getAddress(values['agent-owner']||'0x33a4De190Ffa59deC8260880bc96744
 const full=(mintLabel||'agent-01')+'.momentum.plumbline.eth';
 const rpc=readFileSync('.secrets/sepolia-rpc-url','utf8').trim();
 const client=createPublicClient({chain:sepolia,transport:http(rpc,{retryCount:0,timeout:20000})});
-type Step=Transaction & {from:Address;hash?:Hex};
+type Step=Transaction & {from:Address;hash?:Hex;creation?:boolean};
 type State={steps:Step[];index:number;created:number;verified?:boolean};
-const path=mintLabel?'.secrets/identity-mint-'+mintLabel+'-'+agent.toLowerCase()+'.json':'.secrets/identity-registration.json';
+const path=values.authority?'.secrets/authority-deploy.json':values.migration?'.secrets/authority-migration.json':mintLabel?'.secrets/identity-mint-'+mintLabel+'-'+agent.toLowerCase()+'.json':'.secrets/identity-registration.json';
 const save=()=>writeFileSync(path,JSON.stringify(state,null,2)+'\n',{mode:0o600});
 let state:State;
 if(await client.getChainId()!==11155111)throw new Error('RPC must be Sepolia');
+if((values.migration||values.authority)&&!existsSync(path))throw new Error('Run prepare-authority-migration first');
 if(existsSync(path))state=JSON.parse(readFileSync(path,'utf8'));
 else if(mintLabel){
  const registry=deployment('UserRegistryImpl');
@@ -78,6 +79,14 @@ const auth=randomBytes(24).toString('hex');
 const origin='http://127.0.0.1:3312';
 let busy=false;
 async function verify(){
+ if(values.authority){
+  const deployment=JSON.parse(readFileSync('docs/phase-3/adapter-deployment.json','utf8'));
+  const artifact=JSON.parse(readFileSync('packages/contracts/out/ENSAuthorityAdapter.sol/ENSAuthorityAdapter.json','utf8'));
+  const authorized=await client.readContract({address:deployment.address,abi:artifact.abi,functionName:'isAuthorized',args:[namehash(full),agent]});
+  if(authorized!==false)throw new Error('Unexpected active authority before mandate setup');
+  state.verified=true;save();return;
+ }
+
  const universal=deployment('UniversalResolverV2'),abi=deployment('PermissionedResolverImpl').abi;
  for(const [name,address] of [['plumbline.eth',owner],['momentum.plumbline.eth',owner],[full,agent]]){
   const result=await client.readContract({...universal,functionName:'resolve',args:[toHex(packetToBytes(name)),encodeFunctionData({abi,functionName:'addr',args:[namehash(name)]})]});
@@ -85,10 +94,10 @@ async function verify(){
  }
  const result=await client.readContract({...universal,functionName:'resolve',args:[toHex(packetToBytes(full)),encodeFunctionData({abi,functionName:'text',args:[namehash(full),'agent-context']})]});
  // Preserve raw response and receipts as live evidence, without the registration secret.
- mkdirSync('docs/phase-2',{recursive:true});writeFileSync(mintLabel?'docs/phase-2/live-mint-'+mintLabel+'.json':'docs/phase-2/live-registration.json',JSON.stringify({chainId:11155111,name:full,verifiedAt:new Date().toISOString(),identityResponse:result,transactions:state.steps.map(s=>({description:s.description,hash:s.hash}))},null,2));
+ mkdirSync('docs/phase-2',{recursive:true});writeFileSync(mintLabel?'docs/phase-2/live-mint-'+mintLabel+'.json':values.migration?'docs/phase-3/migration-verification.json':'docs/phase-2/live-registration.json',JSON.stringify({chainId:11155111,name:full,verifiedAt:new Date().toISOString(),identityResponse:result,transactions:state.steps.map(s=>({description:s.description,hash:s.hash}))},null,2));
  state.verified=true;save();
 }
-const page=`<!doctype html><meta charset="utf-8"><title>Plumbline Sepolia registration</title><h1>Phase 2: ENS registration</h1><p>${full} · Sepolia · ${mintLabel ? "expires with its strategy" : "28-day root registration"}</p><p>Keep this page open. Each transaction requires your approval in MetaMask. Select the wallet address shown below. After the commitment, wait at least 60 seconds before retrying the reveal.</p><pre id="status"></pre><button id="next">Review next transaction</button><script>
+const page=`<!doctype html><meta charset="utf-8"><title>Plumbline Sepolia registration</title><h1>${(values.migration||values.authority)?"Phase 3: ENS permission migration":"Phase 2: ENS registration"}</h1><p>${full} · Sepolia · ${mintLabel ? "expires with its strategy" : "28-day root registration"}</p><p>Keep this page open. Each transaction requires your approval in MetaMask. Select the wallet address shown below. After the commitment, wait at least 60 seconds before retrying the reveal.</p><pre id="status"></pre><button id="next">Review next transaction</button><script>
 const token=location.hash.slice(1)||sessionStorage.getItem('plumbline-session');if(token)sessionStorage.setItem('plumbline-session',token);history.replaceState(null,'',location.pathname);const status=document.querySelector('#status'),button=document.querySelector('#next');
 const wallets=new Map();
 window.addEventListener('eip6963:announceProvider',e=>{wallets.set(e.detail.info.rdns,e.detail.provider);});
@@ -101,7 +110,7 @@ async function getMetaMask(){
  return provider;
 }
 async function api(path,body){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Session':token},body:JSON.stringify(body||{})});const d=await r.json();if(!r.ok)throw Error(d.error);return d;}
-button.onclick=async()=>{button.disabled=true;try{const pendingHash=localStorage.getItem('plumbline-pending');if(pendingHash){await api('/receipt',{hash:pendingHash});localStorage.removeItem('plumbline-pending');}const d=await api('/next');if(d.done){status.textContent='Complete: live ENS names resolved. Return to Codex.';return;}status.textContent=d.position+'\\n'+d.step.description+'\\nWallet: '+d.step.from+'\\nContract: '+d.step.to;
+button.onclick=async()=>{button.disabled=true;try{const pendingHash=localStorage.getItem('plumbline-pending');if(pendingHash){await api('/receipt',{hash:pendingHash});localStorage.removeItem('plumbline-pending');}const d=await api('/next');if(d.done){status.textContent='Signing sequence verified. Return to Codex for the remaining phase checks.';return;}status.textContent=d.position+'\\n'+d.step.description+'\\nWallet: '+d.step.from+'\\nContract: '+d.step.to;
 const ethereum=await getMetaMask();
 await ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0xaa36a7'}]});
 let accounts=await ethereum.request({method:'eth_requestAccounts'});
@@ -112,7 +121,7 @@ if(!accounts.some(a=>a.toLowerCase()===d.step.from.toLowerCase())){
 status.textContent+='\\nConnected through MetaMask: '+accounts.join(', ');
 if(!accounts.some(a=>a.toLowerCase()===d.step.from.toLowerCase()))throw Error('The required wallet is not connected to this site. In MetaMask permissions, connect the address shown above.');
 if(!confirm(d.step.description+'\\nSepolia only. Continue to MetaMask?'))return;
-const hash=await ethereum.request({method:'eth_sendTransaction',params:[{from:d.step.from,to:d.step.to,data:d.step.data,value:'0x0'}]});
+const hash=await ethereum.request({method:'eth_sendTransaction',params:[{from:d.step.from,...(d.step.creation?{}:{to:d.step.to}),data:d.step.data,value:'0x0'}]});
 localStorage.setItem('plumbline-pending',hash);await api('/receipt',{hash});localStorage.removeItem('plumbline-pending');status.textContent='Confirmed. Click to review the next transaction.';
 }catch(e){status.textContent+='\\n'+e.message;}finally{button.disabled=false;}};
 const pending=localStorage.getItem('plumbline-pending');if(pending)api('/receipt',{hash:pending}).then(()=>{localStorage.removeItem('plumbline-pending');status.textContent='Previous transaction recovered.'}).catch(e=>status.textContent=e.message);
@@ -132,12 +141,19 @@ createServer(async(req,res)=>{
    if(state.steps.some(s=>s.hash?.toLowerCase()===hash.toLowerCase())){reply(200,{confirmed:true});return;}
    if(!step)throw new Error('No pending step');
    const tx=await client.getTransaction({hash});
-   if(!matchesIdentityTransaction(tx,step))throw new Error('Transaction does not match the expected step');
+   if(step.creation ? !(tx.to===null&&tx.from.toLowerCase()===step.from.toLowerCase()&&tx.input.toLowerCase()===step.data.toLowerCase()&&tx.value===0n) : !matchesIdentityTransaction(tx,step))throw new Error('Transaction does not match the expected step');
    const receipt=await client.waitForTransactionReceipt({hash,timeout:45000});if(receipt.status!=='success')throw new Error('Transaction reverted');
+   if(step.creation){
+    if(!receipt.contractAddress)throw new Error('Missing deployed contract address');
+    const artifact=JSON.parse(readFileSync('packages/contracts/out/ENSAuthorityAdapter.sol/ENSAuthorityAdapter.json','utf8'));
+    const adapter=receipt.contractAddress;
+    state.steps.push({to:adapter,from:owner,value:'0',data:encodeFunctionData({abi:artifact.abi,functionName:'enroll',args:['momentum','agent-01']}),description:'Enroll migrated agent in the authority adapter'});
+    writeFileSync('docs/phase-3/adapter-deployment.json',JSON.stringify({address:adapter,transactionHash:hash},null,2));
+   }
    step.hash=hash;state.index++;save();reply(200,{confirmed:true});
   }else if(req.url==='/next'){
    if(!step){await verify();reply(200,{done:true});}
-   else {await client.call({account:step.from,to:step.to,data:step.data,value:0n});reply(200,{position:`Step ${state.index+1} of ${state.steps.length}`,step});}
+   else {await client.call({account:step.from,to:step.creation?undefined:step.to,data:step.data,value:0n});reply(200,{position:`Step ${state.index+1} of ${state.steps.length}`,step});}
   }else reply(404,{error:'Unknown endpoint'});
  }catch(e){reply(400,{error:e instanceof Error && !e.message.includes(rpc) && e.message.length<200?e.message:'Sepolia check failed. If this is the reveal step, wait 60 seconds after commitment and retry. No step was advanced.'});}
  finally{busy=false;}

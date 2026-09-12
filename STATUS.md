@@ -15,7 +15,7 @@ Updated: 2026-09-13. Working copy: /home/mihir/Plumbline.
 - Decoded identity records matched each name, role and chain. Evidence: docs/phase-2/live-registration.json. Recheck with pnpm identity:verify.
 - Registry proxies and separate PermissionedResolvers are deployed. The pinned local fork test passed root registration, hierarchy resolution and unauthorized agent-record update rejection.
 - Reusable mint command: pnpm identity:mint --mint-agent <label> --agent-owner <public-address>. It prepares two MetaMask transactions under momentum.plumbline.eth. Unsigned preparation passed; underlying deployment and registration operations passed on the fork. No additional live agent was minted for testing.
-- Wrapped receipt matching tests passed. No Phase 3 implementation started.
+- Wrapped receipt matching tests passed. Phase 3 progress is tracked below.
 
 ## Limits
 CI workflow is configured and its local checks pass; a remote GitHub Actions run has not been verified. No trades, fund allocation, model training, or reward predicates implemented. Further agent wallets can be assigned as the population is defined; no final population count inferred from the two supplied addresses.
@@ -28,3 +28,7 @@ Issue history: docs/ISSUES.md. Original idea and phase plan unchanged. Commits r
 - Six adapter unit tests pass with registry fixtures. Separate pinned Sepolia fork test passes actual ENS role grant/revoke, allocator-only mandate editing, retained agent identity edits, and rejected allocator identity edits. Evidence: docs/phase-3/fork-test.txt.
 - Live migration required: existing strategy registry lacks AGENT_ACTIVE admin, and existing resolver grants broad text permissions. Replace the strategy registry while preserving names/resolver and migrate records to scoped permissions. Agent token ID/registry address will change; source namehash remains the same.
 - Remaining: promotion semantics and tests; adapter integration against real ENS transfer/expiry behavior; reviewable migration/deployment signing flow; live adapter and grant/revoke evidence. Phase 3 is not complete.
+
+Phase 3 continuation: versioned notional promotion implemented. Real ENS fork integration passed adapter deployment, migration, enrollment, grant/revoke/regrant, actual token transfer invalidation and expiry. Prepared 5 unsigned migration steps in docs/phase-3/migration-plan.json. Live migration, adapter deployment and live mandate/authorization evidence remain pending.
+
+Phase 3 live migration verified: all 5 receipts succeeded; canonical strategy registry, agent owner and expiry match; allocator mandate-write eth_call succeeds and agent write is rejected. Evidence: docs/phase-3/migration-verification.json. Adapter deployment/enrollment signing sequence prepared; not deployed yet. Live mandate demonstration still needs token whitelist confirmation.

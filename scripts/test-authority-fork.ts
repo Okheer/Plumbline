@@ -1,4 +1,5 @@
-import { authorityRegistry, scopeResolver, mandateRecords, lifecycle, AGENT_ACTIVE } from '../packages/backend/src/authority/transactions.ts';
+import {readFileSync} from 'node:fs';
+import { authorityRegistry, scopeResolver, mandateRecords, lifecycle, promoteMandate, AGENT_ACTIVE } from '../packages/backend/src/authority/transactions.ts';
 import {labelhash} from 'viem/ens';
 import assert from 'node:assert/strict';
 import { createPublicClient, createWalletClient, http, parseEther, encodeFunctionData, toHex, type Hex, type Address } from 'viem';
@@ -58,7 +59,7 @@ console.log('PASS: root commit/reveal, exact test-token payment, premature revea
 console.log('PASS: real ENSv2 factory proxies, nested registry links, agent registration, ENSIP-26 record, unauthorized record update rejection (local Sepolia fork only).');
 
 const authority=await proxy(authorityRegistry(owner,106n),owner);
-await send(registerChild(authority,'agent-test',agent,zeroAddress,resolver,expiry));
+await send({to:authority,data:encodeFunctionData({abi:registryABI,functionName:'register',args:['agent-test',agent,zeroAddress,resolver,(1n<<24n)|((1n<<28n)<<128n),expiry]}),value:'0',description:'Create transferable authority identity'});
 const state=await client.readContract({address:authority,abi:registryABI,functionName:'getState',args:[BigInt(labelhash('agent-test'))]}) as {resource:bigint};
 await send(lifecycle(authority,state.resource,agent,true));
 assert.equal(await client.readContract({address:authority,abi:registryABI,functionName:'hasRoles',args:[state.resource,AGENT_ACTIVE,agent]}),true);
@@ -71,3 +72,34 @@ await assert.rejects(client.simulateContract({account:agent,address:resolver,abi
 await client.simulateContract({account:agent,address:resolver,abi:resolverABI,functionName:'setText',args:[namehash(full),'agent-context',String(context)]});
 await assert.rejects(client.simulateContract({account:owner,address:resolver,abi:resolverABI,functionName:'setText',args:[namehash(full),'agent-context','unauthorized']}));
 console.log('PASS: actual ENS trading role grant/revoke and allocator-only mandate edits; agent retains identity editing; fixture instrument only, local fork.');
+
+await send(promoteMandate(resolver,full,1n,['0x0000000000000000000000000000000000000011'],100000000000000000000n,200000000000000000000n),owner);
+assert.equal(await client.readContract({address:resolver,abi:resolverABI,functionName:'text',args:[namehash(full),'plumbline.mandate.version']}),'2');
+assert.equal(await client.readContract({address:resolver,abi:resolverABI,functionName:'text',args:[namehash(full),'plumbline.mandate.maxNotionalQuoteE18']}),'200000000000000000000');
+assert.throws(()=>promoteMandate(resolver,full,2n,[owner],200n,100n));
+console.log('PASS: versioned promotion increases notional cap; decreasing promotion rejected.');
+
+// Use the real migrated strategy registry beneath the already registered fork tree.
+await send({to:fund,data:encodeFunctionData({abi:registryABI,functionName:'setSubregistry',args:[BigInt(labelhash('fork-test')),authority]}),value:'0',description:'Local migration of strategy registry'});
+await send(parentLink(authority,fund,'fork-test'));
+const artifact=JSON.parse(readFileSync('packages/contracts/out/ENSAuthorityAdapter.sol/ENSAuthorityAdapter.json','utf8'));
+const wallet=createWalletClient({account:owner,chain:sepolia,transport:http(rpc)});
+const deployHash=await wallet.deployContract({abi:artifact.abi,bytecode:artifact.bytecode.object,args:[deployment('ETHRegistry').address,owner,'plumbline']});
+const deployed=await client.waitForTransactionReceipt({hash:deployHash});assert.equal(deployed.status,'success');assert(deployed.contractAddress);
+const adapter=deployed.contractAddress;
+await send({to:adapter,data:encodeFunctionData({abi:artifact.abi,functionName:'enroll',args:['fork-test','agent-test']}),value:'0',description:'Enroll real ENS agent'});
+const allowed=()=>client.readContract({address:adapter,abi:artifact.abi,functionName:'isAuthorized',args:[namehash(full),agent]});
+assert.equal(await allowed(),false);
+await send(lifecycle(authority,state.resource,agent,true));assert.equal(await allowed(),true);
+await send(lifecycle(authority,state.resource,agent,false));assert.equal(await allowed(),false);
+await send(lifecycle(authority,state.resource,agent,true));assert.equal(await allowed(),true);
+const snapshotResponse=await fetch(rpc,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'evm_snapshot',params:[]})});
+const snapshot=(await snapshotResponse.json()).result;
+const beforeTransfer=await client.readContract({address:authority,abi:registryABI,functionName:'getState',args:[BigInt(labelhash('agent-test'))]}) as {tokenId:bigint};
+await send({to:authority,data:encodeFunctionData({abi:registryABI,functionName:'safeTransferFrom',args:[agent,owner,beforeTransfer.tokenId,1n,'0x']}),value:'0',description:'Local transfer invalidation test'},agent);
+assert.equal(await allowed(),false);
+assert.equal(await client.readContract({address:adapter,abi:artifact.abi,functionName:'isAuthorized',args:[namehash(full),owner]}),false);
+await local('evm_revert',[snapshot]);
+console.log('PASS: actual ENS token transfer invalidates enrollment for old and new owner.');
+await local('evm_setNextBlockTimestamp',[Number(expiry)+1]);await local('evm_mine',[]);assert.equal(await allowed(),false);
+console.log('PASS: deployed adapter against real ENS migration, enrollment, grant/revoke/regrant and actual name expiry on fork.');

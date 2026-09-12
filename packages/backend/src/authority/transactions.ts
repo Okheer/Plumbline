@@ -23,9 +23,15 @@ export function scopeResolver(resolver:Address,name:string,agent:Address,allocat
  encodeFunctionData({abi,functionName:'revokeRootRoles',args:[16n|(16n<<128n),agent]})];
  return {to:resolver,data:encodeFunctionData({abi,functionName:'multicall',args:[setters]}),value:'0',description:'Separate agent identity keys from allocator-only mandate keys'};
 }
-export function mandateRecords(resolver:Address,name:string,version:bigint,whitelist:Address[]):Transaction {
+export function mandateRecords(resolver:Address,name:string,version:bigint,whitelist:Address[],limits=demoLimits):Transaction {
  if(version<=0n||!whitelist.length)throw new Error('Require a positive version and explicit instrument whitelist');
+ if(!Number.isInteger(limits.maxSlippageBps)||limits.maxSlippageBps<0||limits.maxSlippageBps>10000||BigInt(limits.maxNotionalQuoteE18)<=0n||BigInt(limits.maxOracleAgeSeconds)<=0n)throw new Error('Invalid mandate limits');
  const abi=deployment('PermissionedResolverImpl').abi,node=namehash(name);
- const values=[version.toString(),String(demoLimits.maxSlippageBps),demoLimits.maxNotionalQuoteE18,JSON.stringify(whitelist),demoLimits.maxOracleAgeSeconds];
+ const values=[version.toString(),String(limits.maxSlippageBps),limits.maxNotionalQuoteE18,JSON.stringify(whitelist),limits.maxOracleAgeSeconds];
  return {to:resolver,data:encodeFunctionData({abi,functionName:'multicall',args:[mandateKeys.map((key,i)=>encodeFunctionData({abi,functionName:'setText',args:[node,key,values[i]]}))]}),value:'0',description:'Write demo mandate with explicit instruments'};
+}
+
+export function promoteMandate(resolver:Address,name:string,currentVersion:bigint,whitelist:Address[],currentNotional:bigint,newNotional:bigint):Transaction {
+ if(currentVersion<=0n||newNotional<=currentNotional)throw new Error('Promotion must increase the notional cap');
+ return mandateRecords(resolver,name,currentVersion+1n,whitelist,{...demoLimits,maxNotionalQuoteE18:newNotional.toString()});
 }
