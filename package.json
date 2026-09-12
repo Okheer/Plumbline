@@ -11,7 +11,11 @@
     "test": "tsx --test packages/shared/test/*.test.ts",
     "build": "pnpm --filter @plumbline/frontend build",
     "integration:check": "tsx scripts/check-integrations.ts",
-    "proto:check": "buf lint packages/oracle/proto"
+    "proto:check": "buf lint packages/oracle/proto",
+    "identity:preflight": "tsx packages/backend/src/identity/preflight.ts",
+    "identity:plan": "tsx scripts/identity-plan.ts",
+    "identity:test": "python3 scripts/test-identity-fork.py",
+    "identity:quote": "tsx scripts/identity-quote.ts"
   },
   "devDependencies": {
     "typescript": "5.9.3",

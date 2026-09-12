@@ -37,3 +37,8 @@ Provider test requires network access and saved credentials; CI deliberately run
 - packages/oracle: Rust/WASM foundation and protobuf schemas; predicates remain Phase 6.
 
 See docs/phase-1/INTERFACE.md for interface semantics and acceptance, STATUS.md for phase progress, and docs/ISSUES.md for observed errors and fixes. The phase plan is unchanged. Git commits remain manual.
+
+## Phase 2 identity tooling (in progress)
+Run `pnpm identity:preflight` for read-only Sepolia availability checks, or `pnpm identity:test` to start a disposable Anvil Sepolia fork and test factory deployments, registry links, identity records, and unauthorized update rejection. Both require the saved RPC and network access; the fork test requires Anvil on PATH. No live transaction is sent.
+
+`pnpm identity:plan --action registry --owner <public-address> --salt <integer>` prints unsigned registry deployment calldata. Resolver and register-agent actions are also available in scripts/identity-plan.ts. This is transaction preparation; live registration and full mint orchestration remain unfinished.
