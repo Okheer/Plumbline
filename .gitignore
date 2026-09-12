@@ -1,0 +1,24 @@
+.tools/
+.secrets/
+.env
+.env.*
+!.env.example
+
+node_modules/
+.next/
+*.tsbuildinfo
+**/target/
+**/out/
+**/cache/
+
+# Local project documentation (kept on disk)
+/docs/
+
+# Generated output and temporary files
+dist/
+coverage/
+*.log
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db

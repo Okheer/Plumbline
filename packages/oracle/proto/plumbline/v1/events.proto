@@ -1,0 +1,52 @@
+syntax = "proto3";
+package plumbline.v1;
+// Canonical event envelope. All 256-bit integers use decimal strings.
+message EventPosition {
+  uint64 chain_id = 1;
+  uint64 block_number = 2;
+  bytes block_hash = 3;
+  bytes transaction_hash = 4;
+  uint32 log_index = 5;
+}
+message Intent {
+  uint32 schema_version = 1;
+  bytes intent_id = 2;
+  bytes agent_node = 3;
+  bytes signer = 4;
+  bytes token_in = 5;
+  bytes token_out = 6;
+  string amount_in = 7;
+  string min_amount_out = 8;
+  uint32 max_slippage_bps = 9;
+  string target_delta_e18 = 10;
+  string mandate_version = 11;
+  string nonce = 12;
+  string deadline = 13;
+  string reference_block = 14;
+  bytes reference_block_hash = 15;
+  string reference_price_e18 = 16;
+  EventPosition position = 17;
+}
+message Fill {
+  uint32 schema_version = 1;
+  bytes intent_id = 2;
+  bytes agent_node = 3;
+  bytes token_in = 4;
+  bytes token_out = 5;
+  string amount_in = 6;
+  string amount_out = 7;
+  string mandate_version = 8;
+  EventPosition position = 9;
+  string gas_cost_wei = 10;
+}
+message Mandate {
+  uint32 schema_version = 1;
+  bytes agent_node = 2;
+  string version = 3;
+  bool active = 4;
+  uint32 max_slippage_bps = 5;
+  string max_notional_quote_e18 = 6;
+  repeated bytes instrument_whitelist = 7;
+  string max_oracle_age_seconds = 8;
+  EventPosition position = 9;
+}

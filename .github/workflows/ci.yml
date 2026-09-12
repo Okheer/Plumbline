@@ -1,0 +1,27 @@
+name: Phase 1 checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  foundations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm proto:check
+      - run: pnpm build
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+      - run: forge build --root packages/contracts
+      - uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo check --locked --manifest-path packages/oracle/Cargo.toml --target wasm32-unknown-unknown
