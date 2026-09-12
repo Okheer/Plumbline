@@ -42,3 +42,10 @@ See docs/phase-1/INTERFACE.md for interface semantics and acceptance, STATUS.md 
 Run `pnpm identity:preflight` for read-only Sepolia availability checks, or `pnpm identity:test` to start a disposable Anvil Sepolia fork and test factory deployments, registry links, identity records, and unauthorized update rejection. Both require the saved RPC and network access; the fork test requires Anvil on PATH. No live transaction is sent.
 
 `pnpm identity:plan --action registry --owner <public-address> --salt <integer>` prints unsigned registry deployment calldata. Resolver and register-agent actions are also available in scripts/identity-plan.ts. This is transaction preparation; live registration and full mint orchestration remain unfinished.
+
+Run `pnpm identity:register` from the project directory to prepare/resume the approved 28-day ENS tree registration. Open the printed local URL in the browser containing MetaMask. The utility requests individual Sepolia signatures and verifies their receipts before proceeding; it never receives private keys. Progress and the commitment secret remain in ignored .secrets/identity-registration.json. Keep that file until registration completes. Live resolution evidence is written to docs/phase-2/live-registration.json after the final verification.
+
+## Completed Phase 2 identity
+Live agent: `agent-01.momentum.plumbline.eth`. Run `pnpm identity:verify` to check all three names, identity records and receipts.
+
+To mint another agent beneath momentum, run `pnpm identity:mint --mint-agent <label> --agent-owner <public-address>` using your chosen values. Stop any existing signing utility on port 3312 first. Open the printed URL in the MetaMask browser; approve the resolver deployment with the agent wallet and registration with the fund wallet. Add `--prepare-only` to prepare unsigned transactions without opening the signing utility. The new agent expires with its strategy; no private keys are generated.

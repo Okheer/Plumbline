@@ -15,7 +15,11 @@
     "identity:preflight": "tsx packages/backend/src/identity/preflight.ts",
     "identity:plan": "tsx scripts/identity-plan.ts",
     "identity:test": "python3 scripts/test-identity-fork.py",
-    "identity:quote": "tsx scripts/identity-quote.ts"
+    "identity:quote": "tsx scripts/identity-quote.ts",
+    "identity:register": "tsx scripts/identity-metamask.ts",
+    "identity:verify": "tsx scripts/verify-identity.ts",
+    "identity:mint": "tsx scripts/identity-metamask.ts",
+    "identity:receipt-test": "tsx scripts/test-receipt-match.ts"
   },
   "devDependencies": {
     "typescript": "5.9.3",

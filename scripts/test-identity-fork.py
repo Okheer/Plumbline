@@ -12,7 +12,7 @@ rpc = os.environ.get('SEPOLIA_RPC_URL') or (root / '.secrets/sepolia-rpc-url').r
 with socket.socket() as probe:
     probe.bind(('127.0.0.1', 18545))
 process = subprocess.Popen(
-    ['anvil', '--fork-url', rpc, '--host', '127.0.0.1', '--port', '18545', '--chain-id', '11155111', '--silent'],
+    ['anvil', '--fork-url', rpc, '--fork-block-number', '11690690', '--host', '127.0.0.1', '--port', '18545', '--chain-id', '11155111', '--silent'],
     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
 )
 try:
