@@ -20,7 +20,10 @@
     "identity:verify": "tsx scripts/verify-identity.ts",
     "identity:mint": "tsx scripts/identity-metamask.ts",
     "identity:receipt-test": "tsx scripts/test-receipt-match.ts",
-    "authority:test": "python3 scripts/test-identity-fork.py --authority"
+    "authority:test": "python3 scripts/test-identity-fork.py --authority",
+    "authority:verify": "tsx scripts/verify-phase3.ts",
+    "authority:prepare-demo": "tsx scripts/prepare-mandate-demo.ts",
+    "authority:sign-demo": "tsx scripts/identity-metamask.ts --demo"
   },
   "devDependencies": {
     "typescript": "5.9.3",

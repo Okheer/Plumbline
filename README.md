@@ -49,3 +49,9 @@ Run `pnpm identity:register` from the project directory to prepare/resume the ap
 Live agent: `agent-01.momentum.plumbline.eth`. Run `pnpm identity:verify` to check all three names, identity records and receipts.
 
 To mint another agent beneath momentum, run `pnpm identity:mint --mint-agent <label> --agent-owner <public-address>` using your chosen values. Stop any existing signing utility on port 3312 first. Open the printed URL in the MetaMask browser; approve the resolver deployment with the agent wallet and registration with the fund wallet. Add `--prepare-only` to prepare unsigned transactions without opening the signing utility. The new agent expires with its strategy; no private keys are generated.
+
+## Completed Phase 3 authority
+
+The live ENS authority adapter is deployed on Sepolia and the agent is enrolled. The verified demonstration writes a bounded mandate, grants trading authority, promotes the mandate from 100 to 200 quote tokens, and revokes authority. The agent finishes inactive. Run `pnpm authority:verify` to independently re-read the hierarchy, every mandate record, four lifecycle receipts, allocator-only record permissions, and final adapter result. Fork coverage for transfer/expiry invalidation and ENS permission behavior runs with `pnpm authority:test`.
+
+The Phase 3 MockUSDC whitelist is demonstration metadata only. Aqua liquidity and the final Phase 4 instrument universe are not implemented yet.

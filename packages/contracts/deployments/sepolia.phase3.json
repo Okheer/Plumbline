@@ -1,0 +1,61 @@
+{
+  "chainId": 11155111,
+  "fundName": "plumbline.eth",
+  "strategyName": "momentum.plumbline.eth",
+  "agentName": "agent-01.momentum.plumbline.eth",
+  "fundLabel": "plumbline",
+  "strategyLabel": "momentum",
+  "agentLabel": "agent-01",
+  "allocator": "0x89cE79730f8a1F4B05B4EF9334ef4f53E237dE20",
+  "agent": "0x33a4De190Ffa59deC8260880bc96744D8Ac38177",
+  "strategyRegistry": "0xFb047e8f204EeE17F155E05dF08Dba24b70458A1",
+  "agentResolver": "0x026AB201E31908E560d4c82Ac92B4244e8EF5E77",
+  "authorityAdapter": "0x9e1b5fcbee4f10298b1b0243fc31dbecb3c1640c",
+  "agentExpiry": "1791658236",
+  "mockUsdc": "0x768f42455a2d082e23ceef7d51e5787c82d67a39",
+  "migrationTransactions": [
+    "0x8c146765783ec1442db0557ddd4298f30804050f9a7635362b1a6eb29fb2af29",
+    "0x43ff2c5b6e1d92d5264dbd9401f5fb405ab5d760ac1c814b408c8cce28f3babe",
+    "0xc6be7002b0b51f85f53aa669676f9403dbebe27efa47de6f91535ddedb033afa",
+    "0x8d24d1b6cbedd60dcab88a76a9caf4103f079ba6d0623c19f70291fd0ba4cfcc",
+    "0xa1e575318428760b7889c806ce241f1e1d33f837cf1104376cd67020971580b8"
+  ],
+  "adapterTransactions": [
+    "0xe3b2fc275ef5a2912f923e0e664cb17d512d5c46efd54997a0d367b8b9e5594d",
+    "0xc6c706885fecdf62be032fc2df9c6fc2dbca8130b54a6216762db4bc3a0b5eb0"
+  ],
+  "lifecycle": [
+    {
+      "description": "Write mandate version 1",
+      "hash": "0x684627240d2025e5fa5273201cb822eb4c2a706bbfcf477a16c751a1d81b3d3e",
+      "block": "11691430",
+      "active": false,
+      "version": "1",
+      "maxNotionalQuoteE18": "100000000000000000000"
+    },
+    {
+      "description": "Hire: grant AGENT_ACTIVE",
+      "hash": "0xd3ea7c3e46ae6476c3aa6d48acffc155002ac2c50f20115941d6a04e7149ca81",
+      "block": "11691446",
+      "active": true,
+      "version": "1",
+      "maxNotionalQuoteE18": "100000000000000000000"
+    },
+    {
+      "description": "Promote: write mandate version 2",
+      "hash": "0x8bc8087443db28b1fc063738221fac300eec07cdfa727fee35d6c0da2643b9c1",
+      "block": "11691450",
+      "active": true,
+      "version": "2",
+      "maxNotionalQuoteE18": "200000000000000000000"
+    },
+    {
+      "description": "Fire: revoke AGENT_ACTIVE",
+      "hash": "0xd154fea5610f0d6d5cb59d019e1e5cd1a847d2b6fab416b6f62578ff585e17ea",
+      "block": "11691458",
+      "active": false,
+      "version": "2",
+      "maxNotionalQuoteE18": "200000000000000000000"
+    }
+  ]
+}

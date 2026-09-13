@@ -22,13 +22,11 @@ CI workflow is configured and its local checks pass; a remote GitHub Actions run
 
 Issue history: docs/ISSUES.md. Original idea and phase plan unchanged. Commits remain manual.
 
-## Phase 3 — implementation in progress
-- Fund wallet selected as initial allocator/admin. Demo defaults: 50 bps slippage, 100 quote tokens (E18), 300-second oracle age. Actual instrument whitelist remains Phase 4; no live mandate or active role set.
-- Implemented ENSAuthorityAdapter, lifecycle grant/revoke builders, scoped identity/mandate permissions and mandate record encoding.
-- Six adapter unit tests pass with registry fixtures. Separate pinned Sepolia fork test passes actual ENS role grant/revoke, allocator-only mandate editing, retained agent identity edits, and rejected allocator identity edits. Evidence: docs/phase-3/fork-test.txt.
-- Live migration required: existing strategy registry lacks AGENT_ACTIVE admin, and existing resolver grants broad text permissions. Replace the strategy registry while preserving names/resolver and migrate records to scoped permissions. Agent token ID/registry address will change; source namehash remains the same.
-- Remaining: promotion semantics and tests; adapter integration against real ENS transfer/expiry behavior; reviewable migration/deployment signing flow; live adapter and grant/revoke evidence. Phase 3 is not complete.
-
-Phase 3 continuation: versioned notional promotion implemented. Real ENS fork integration passed adapter deployment, migration, enrollment, grant/revoke/regrant, actual token transfer invalidation and expiry. Prepared 5 unsigned migration steps in docs/phase-3/migration-plan.json. Live migration, adapter deployment and live mandate/authorization evidence remain pending.
-
-Phase 3 live migration verified: all 5 receipts succeeded; canonical strategy registry, agent owner and expiry match; allocator mandate-write eth_call succeeds and agent write is rejected. Evidence: docs/phase-3/migration-verification.json. Adapter deployment/enrollment signing sequence prepared; not deployed yet. Live mandate demonstration still needs token whitelist confirmation.
+## Phase 3 — exit criteria satisfied
+- The fund wallet is the initial allocator/admin. Live mandate version 2 sets 50 bps maximum slippage, a 200 quote-token maximum notional encoded at E18, ENS Sepolia MockUSDC as the demonstration whitelist, and a 300-second maximum oracle age.
+- The strategy registry was migrated to one initialized with the `AGENT_ACTIVE` admin role. The migration preserved the public ENS hierarchy, agent owner, resolver and expiry. All five migration receipts succeeded. Evidence: `docs/phase-3/migration-verification.json`.
+- `ENSAuthorityAdapter` is deployed at `0x9e1b5fcbee4f10298b1b0243fc31dbecb3c1640c`, and `agent-01.momentum.plumbline.eth` is enrolled. The adapter resolves the current hierarchy and binds authorization to the current owner, registry resource and resolver.
+- The live lifecycle was verified at each receipt block: mandate version 1/inactive, hire/active, promotion to version 2 and a 200-token cap/active, then fire/inactive. The final on-chain state is inactive. Evidence: `docs/phase-3/final-verification.json` and `demo-step-{0,1,2,3}.json`.
+- Live read simulations confirm the allocator can edit mandate keys while both the agent and an unrelated address are rejected. The agent retains scoped control of its identity keys.
+- Six adapter unit tests pass. The pinned Sepolia fork integration passes actual ENS registry migration, grant/revoke/regrant, versioned promotion, resolver permission separation, transfer invalidation and expiry invalidation. Evidence: `docs/phase-3/fork-test.txt`.
+- Final checks passed: `pnpm authority:verify`, strict TypeScript checks, `pnpm identity:receipt-test`, and `forge test --root packages/contracts` (6 tests). Phase 4 has not started; the MockUSDC whitelist here is mandate demonstration data, not an Aqua position or final instrument-universe decision.

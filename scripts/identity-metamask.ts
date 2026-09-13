@@ -1,3 +1,4 @@
+import { verifyDemoStep } from '../packages/backend/src/authority/verify-demo.ts';
 import { matchesIdentityTransaction } from '../packages/backend/src/identity/receipt-match.ts';
 // Local signing utility for Phase 2; no wallet keys enter this process.
 import { parseArgs } from 'node:util';
@@ -10,7 +11,7 @@ import { namehash, labelhash, packetToBytes } from 'viem/ens';
 import { deployment, deployRegistry, deployAgentResolver, registerChild, parentLink, zeroAddress, type Transaction } from '../packages/backend/src/identity/transactions.ts';
 import { commitmentArgs, commitRegistration, revealRegistration } from '../packages/backend/src/identity/registration.ts';
 const owner='0x89cE79730f8a1F4B05B4EF9334ef4f53E237dE20' as Address;
-const {values}=parseArgs({options:{'mint-agent':{type:'string'},'agent-owner':{type:'string'},'prepare-only':{type:'boolean'},migration:{type:'boolean'},authority:{type:'boolean'}}});
+const {values}=parseArgs({options:{'mint-agent':{type:'string'},'agent-owner':{type:'string'},'prepare-only':{type:'boolean'},migration:{type:'boolean'},authority:{type:'boolean'},demo:{type:'boolean'}}});
 const mintLabel=values['mint-agent'];
 if(mintLabel&&!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(mintLabel))throw new Error('Use a lowercase ASCII agent label');
 if(mintLabel&&!values['agent-owner'])throw new Error('Provide --agent-owner public address');
@@ -20,11 +21,11 @@ const rpc=readFileSync('.secrets/sepolia-rpc-url','utf8').trim();
 const client=createPublicClient({chain:sepolia,transport:http(rpc,{retryCount:0,timeout:20000})});
 type Step=Transaction & {from:Address;hash?:Hex;creation?:boolean};
 type State={steps:Step[];index:number;created:number;verified?:boolean};
-const path=values.authority?'.secrets/authority-deploy.json':values.migration?'.secrets/authority-migration.json':mintLabel?'.secrets/identity-mint-'+mintLabel+'-'+agent.toLowerCase()+'.json':'.secrets/identity-registration.json';
+const path=values.demo?'.secrets/mandate-demo.json':values.authority?'.secrets/authority-deploy.json':values.migration?'.secrets/authority-migration.json':mintLabel?'.secrets/identity-mint-'+mintLabel+'-'+agent.toLowerCase()+'.json':'.secrets/identity-registration.json';
 const save=()=>writeFileSync(path,JSON.stringify(state,null,2)+'\n',{mode:0o600});
 let state:State;
 if(await client.getChainId()!==11155111)throw new Error('RPC must be Sepolia');
-if((values.migration||values.authority)&&!existsSync(path))throw new Error('Run prepare-authority-migration first');
+if((values.migration||values.authority||values.demo)&&!existsSync(path))throw new Error('Run prepare-authority-migration first');
 if(existsSync(path))state=JSON.parse(readFileSync(path,'utf8'));
 else if(mintLabel){
  const registry=deployment('UserRegistryImpl');
@@ -79,6 +80,7 @@ const auth=randomBytes(24).toString('hex');
 const origin='http://127.0.0.1:3312';
 let busy=false;
 async function verify(){
+ if(values.demo){for(let i=0;i<state.steps.length;i++)await verifyDemoStep(i,state.steps[i].hash!);state.verified=true;save();return;}
  if(values.authority){
   const deployment=JSON.parse(readFileSync('docs/phase-3/adapter-deployment.json','utf8'));
   const artifact=JSON.parse(readFileSync('packages/contracts/out/ENSAuthorityAdapter.sol/ENSAuthorityAdapter.json','utf8'));
@@ -97,7 +99,7 @@ async function verify(){
  mkdirSync('docs/phase-2',{recursive:true});writeFileSync(mintLabel?'docs/phase-2/live-mint-'+mintLabel+'.json':values.migration?'docs/phase-3/migration-verification.json':'docs/phase-2/live-registration.json',JSON.stringify({chainId:11155111,name:full,verifiedAt:new Date().toISOString(),identityResponse:result,transactions:state.steps.map(s=>({description:s.description,hash:s.hash}))},null,2));
  state.verified=true;save();
 }
-const page=`<!doctype html><meta charset="utf-8"><title>Plumbline Sepolia registration</title><h1>${(values.migration||values.authority)?"Phase 3: ENS permission migration":"Phase 2: ENS registration"}</h1><p>${full} · Sepolia · ${mintLabel ? "expires with its strategy" : "28-day root registration"}</p><p>Keep this page open. Each transaction requires your approval in MetaMask. Select the wallet address shown below. After the commitment, wait at least 60 seconds before retrying the reveal.</p><pre id="status"></pre><button id="next">Review next transaction</button><script>
+const page=`<!doctype html><meta charset="utf-8"><title>Plumbline Sepolia registration</title><h1>${(values.migration||values.authority||values.demo)?"Phase 3: ENS permission migration":"Phase 2: ENS registration"}</h1><p>${full} · Sepolia · ${mintLabel ? "expires with its strategy" : "28-day root registration"}</p><p>Keep this page open. Each transaction requires your approval in MetaMask. Select the wallet address shown below. After the commitment, wait at least 60 seconds before retrying the reveal.</p><pre id="status"></pre><button id="next">Review next transaction</button><script>
 const token=location.hash.slice(1)||sessionStorage.getItem('plumbline-session');if(token)sessionStorage.setItem('plumbline-session',token);history.replaceState(null,'',location.pathname);const status=document.querySelector('#status'),button=document.querySelector('#next');
 const wallets=new Map();
 window.addEventListener('eip6963:announceProvider',e=>{wallets.set(e.detail.info.rdns,e.detail.provider);});
@@ -150,6 +152,7 @@ createServer(async(req,res)=>{
     state.steps.push({to:adapter,from:owner,value:'0',data:encodeFunctionData({abi:artifact.abi,functionName:'enroll',args:['momentum','agent-01']}),description:'Enroll migrated agent in the authority adapter'});
     writeFileSync('docs/phase-3/adapter-deployment.json',JSON.stringify({address:adapter,transactionHash:hash},null,2));
    }
+   if(values.demo)await verifyDemoStep(state.index,hash);
    step.hash=hash;state.index++;save();reply(200,{confirmed:true});
   }else if(req.url==='/next'){
    if(!step){await verify();reply(200,{done:true});}
