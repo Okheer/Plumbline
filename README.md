@@ -54,4 +54,10 @@ To mint another agent beneath momentum, run `pnpm identity:mint --mint-agent <la
 
 The live ENS authority adapter is deployed on Sepolia and the agent is enrolled. The verified demonstration writes a bounded mandate, grants trading authority, promotes the mandate from 100 to 200 quote tokens, and revokes authority. The agent finishes inactive. Run `pnpm authority:verify` to independently re-read the hierarchy, every mandate record, four lifecycle receipts, allocator-only record permissions, and final adapter result. Fork coverage for transfer/expiry invalidation and ENS permission behavior runs with `pnpm authority:test`.
 
-The Phase 3 MockUSDC whitelist is demonstration metadata only. Aqua liquidity and the final Phase 4 instrument universe are not implemented yet.
+The Phase 3 MockUSDC whitelist was demonstration metadata; Phase 4 now uses that token in the selected pWETH/MockUSDC test market.
+
+## Completed Phase 4 Aqua market
+
+The live Sepolia market is `0xb4ef510ABb71aeaCe4128B58Df54f62c042b6CF1`, backed by the official Aqua registry. The fund wallet shipped 10 pWETH and 20,000 MockUSDC as self-custodial virtual liquidity. A user-signed agent fill moved 0.1 pWETH to the maker and 197.431606 MockUSDC to the taker.
+
+Run `pnpm aqua:verify` to recheck every receipt, deployed contract, Aqua balance, wallet balance and swap event against Sepolia. The public addresses and transaction evidence are pinned in `packages/contracts/deployments/sepolia.phase4.json`; RPC credentials and resumable signing state stay under ignored `.secrets/`.

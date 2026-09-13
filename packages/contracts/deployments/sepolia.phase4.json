@@ -1,0 +1,95 @@
+{
+  "verifiedAt": "2026-09-13T08:32:35.644Z",
+  "chainId": 11155111,
+  "aquaRegistry": "0x1111113CCf1426A8E30e2bfF5E005d929bF6a90a",
+  "market": "0xb4ef510ABb71aeaCe4128B58Df54f62c042b6CF1",
+  "mockWeth": "0xD2C72019eAA18019B07c286b7421f549f4D56DBC",
+  "mockUsdc": "0x768F42455A2D082E23ceeF7d51e5787C82d67a39",
+  "maker": "0x89cE79730f8a1F4B05B4EF9334ef4f53E237dE20",
+  "taker": "0x33a4De190Ffa59deC8260880bc96744D8Ac38177",
+  "baselineBalances": {
+    "mockUsdcMakerBefore": "0",
+    "mockUsdcTakerBefore": "0"
+  },
+  "strategy": {
+    "strategyHash": "0x6f5bdcc1d384c891249e6bd43e0b96fae596ffb1222fdaf3b1124fa5101e4c0b",
+    "feeBps": 30,
+    "initialMockWeth": "10000000000000000000",
+    "initialMockUsdc": "20000000000"
+  },
+  "manualFill": {
+    "inputMockWeth": "100000000000000000",
+    "outputMockUsdc": "197431606",
+    "transactionHash": "0x03dd4e748f5e7b317fa53a33a40c7fca5e6f4471494274dad91da39ddce4fdc9"
+  },
+  "finalVirtualBalances": {
+    "mockWeth": "10100000000000000000",
+    "mockUsdc": "19802568394"
+  },
+  "makerAllowancesToAqua": {
+    "mockWeth": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+    "mockUsdc": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+  },
+  "transactions": [
+    {
+      "kind": "deploy-token",
+      "description": "Deploy Sepolia-only Plumbline MockWETH token",
+      "hash": "0xfd1c482092631d39faf11633f0492915e58798ae6f79359d0f08144d59c6878e",
+      "blockNumber": "11694700"
+    },
+    {
+      "kind": "deploy-market",
+      "description": "Deploy the Phase 4 Aqua constant-product market",
+      "hash": "0x058935c637a0096aaac613f5f803a1129d61ad15e1d8bfad1a05ac38864baab0",
+      "blockNumber": "11694702"
+    },
+    {
+      "kind": "mint-maker-weth",
+      "description": "Mint 10 pWETH to the maker wallet",
+      "hash": "0x053217217c624ac022920014057fa7333361d803a64c2b5a68a46989a225e6f5",
+      "blockNumber": "11694704"
+    },
+    {
+      "kind": "mint-taker-weth",
+      "description": "Mint 1 pWETH to the taker wallet",
+      "hash": "0x12e88cbe8dda89273dff2af86c9fe98408d24652824cd1073b69e8336c3190dd",
+      "blockNumber": "11694706"
+    },
+    {
+      "kind": "mint-maker-usdc",
+      "description": "Mint 20,000 Sepolia MockUSDC to the maker wallet",
+      "hash": "0xc3b523dd238e108f7154f4aff829f66591ad813fff4f3de6dfd762a40d704b59",
+      "blockNumber": "11694708"
+    },
+    {
+      "kind": "approve-maker-weth",
+      "description": "Approve Aqua to access maker pWETH",
+      "hash": "0x999d9b80287f7fbed685242a3a4612f2e55d2c5e8233ada3d143ed0e01ea9141",
+      "blockNumber": "11694710"
+    },
+    {
+      "kind": "approve-maker-usdc",
+      "description": "Approve Aqua to access maker MockUSDC",
+      "hash": "0xc00d03e8b13f62921fb95cd0930f37f749227d4295143bdee56e6085ac77eae1",
+      "blockNumber": "11694712"
+    },
+    {
+      "kind": "ship",
+      "description": "Ship 10 pWETH and 20,000 MockUSDC as Aqua virtual liquidity",
+      "hash": "0x2335c8366c041ddc87f63d6343fe94480d5f9b0f48408cc1ed19a078a246ad2e",
+      "blockNumber": "11694715"
+    },
+    {
+      "kind": "approve-taker-weth",
+      "description": "Approve exactly 0.1 pWETH for the manual taker swap",
+      "hash": "0xdd0ef291a3efe896468a854873ab9bd9f44e7cce46327ecce34ac141588d92ac",
+      "blockNumber": "11694734"
+    },
+    {
+      "kind": "swap",
+      "description": "Swap 0.1 pWETH for at least 190 MockUSDC against the Aqua position",
+      "hash": "0x03dd4e748f5e7b317fa53a33a40c7fca5e6f4471494274dad91da39ddce4fdc9",
+      "blockNumber": "11694736"
+    }
+  ]
+}
